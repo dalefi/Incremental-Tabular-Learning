@@ -13,6 +13,40 @@ import seaborn as sns
 
 from pathlib import Path
 
+
+def normalize_data(norm_method, data_small, new_class_data):
+    """
+    Normalizes the data TOGETHER.
+
+    Parameters:
+        norm_method (str)            : The normalization method.
+                                           Available:
+                                           "min_max"
+                                           "mean"
+        data_small (pd.DataFrame)     : The original training data.
+        new_class_data (pd.DataFrame) : The class to be added. 
+    """
+
+    # first need to concatenate the data, so that they are normalized together, otherwise
+    # normalization doesn't make sense
+    
+    full_data = pd.concat([data_small, new_class_data])
+    
+    if norm_method == 'min_max':
+        full_data_normal = (full_data-full_data.min())/(full_data.max()-full_data.min())
+
+    elif norm_method == 'mean':
+        full_data_normal = (full_data-full_data.mean())/full_data.std()
+
+    else:
+        raise ValueError(f"Normalization method {norm_method} not available!")
+
+    data_small_normal = full_data_normal[:len(data_small)]
+    new_class_data_normal = full_data_normal[len(data_small):]
+
+    return data_small_normal, new_class_data_normal
+
+
 def relabel(labels, old_classes, new_class):
     """
     Relabels the labels in order to be able to learn any old_classes - new_class combination.

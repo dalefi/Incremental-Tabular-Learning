@@ -12,6 +12,7 @@ import sklearn as skl
 from sklearn.neighbors import KDTree
 
 from mylib import class_distributions
+from mylib import helper_funcs
 
 
 def weighted_euclidean_distance(x,y,weights):
@@ -200,7 +201,7 @@ def get_samples_split_value(dataframe,
     return dataframe.loc[idx], labels.loc[idx]
 
 
-def get_samples_euclidean(dataframe,
+def get_samples_euclidean(data,
                           labels,
                           data_update,
                           ratio_return_total,
@@ -230,32 +231,15 @@ def get_samples_euclidean(dataframe,
                                         None for unweighted euclidean distance
     """
     num_labels = len(labels.unique())
-    upper_limit = int(len(dataframe)*ratio_return_total)
+    upper_limit = int(len(data)*ratio_return_total)
 
     # initialize returned data
     selected_data = pd.DataFrame(dtype='float64')
     selected_data_labels = pd.Series(dtype='int8')
+    
+    # normalize
+    data_normal, data_update_normal = helper_funcs.normalize_data(normalization, data, data_update)
 
-    # normalization method
-    
-    if normalization == "min_max":
-        # normalize the data
-        data_normal = (dataframe-dataframe.min())/(dataframe.max()-dataframe.min())
-        data_update_normal = (data_update-data_update.min())/(data_update.max()-data_update.min())
-    
-    elif normalization == "mean":
-        data_normal = (dataframe-dataframe.mean())/dataframe.std()
-        data_update_normal = (data_update-data_update.mean())/data_update.std()
-        
-    elif normalization == None:
-        data_normal = dataframe
-        data_update_normal = data_update
-        
-    else:
-        print("Not a supported sort_type")
-        return
-        
-    
     # calculate mean of update_data
     data_update_normal_mean = data_update_normal.mean(axis=0)
     
@@ -268,14 +252,14 @@ def get_samples_euclidean(dataframe,
         distances = pd.Series(weighted_euclidean_distance(data_normal,
                                                           data_update_normal_mean.to_numpy().reshape(1,-1),
                                                           weights = weights),
-                                                          index=dataframe.index).sort_values()
+                                                          index=data.index).sort_values()
 
     else:
         # calculate distances to mean
         distances = pd.Series(weighted_euclidean_distance(data_normal,
                                                           data_update_normal_mean.to_numpy().reshape(1,-1),
-                                                          weights = np.ones(dataframe.shape[1])),
-                                                          index=dataframe.index).sort_values()
+                                                          weights = np.ones(data.shape[1])),
+                                                          index=data.index).sort_values()
     
     
     if sort_type == "closest":
@@ -283,11 +267,11 @@ def get_samples_euclidean(dataframe,
             # compute proportion of data which belongs to given label
             label_proportion = class_distributions.label_proportions(labels)[label]
             # compute the number of labels that are supposed to be selected
-            upper_limit_for_label = int(len(dataframe)*ratio_return_total*label_proportion)
+            upper_limit_for_label = int(len(data)*ratio_return_total*label_proportion)
 
             # select labels
             idx = distances[labels==label].sort_values()[:upper_limit_for_label].index
-            tmp = dataframe.loc[idx]
+            tmp = data.loc[idx]
             tmp_labels = labels.loc[idx]
 
             selected_data = pd.concat([selected_data, tmp])
@@ -298,11 +282,11 @@ def get_samples_euclidean(dataframe,
             # compute proportion of data which belongs to given label
             label_proportion = class_distributions.label_proportions(labels)[label]
             # compute the number of labels that are supposed to be selected
-            upper_limit_for_label = int(len(dataframe)*ratio_return_total*label_proportion)
+            upper_limit_for_label = int(len(data)*ratio_return_total*label_proportion)
 
             # select labels
             idx = distances[labels==label].sort_values()[-upper_limit_for_label:].index
-            tmp = dataframe.loc[idx]
+            tmp = data.loc[idx]
             tmp_labels = labels.loc[idx]
 
             selected_data = pd.concat([selected_data, tmp])
@@ -345,29 +329,15 @@ def get_samples_nearest_neighbors(data,
                                         default alpha=1 means all returned data is close to new data.
         remove_duplicates (bool)      : the data might contain duplicates. by default they are removed.
     """
-    
+
     # compute distribution of classes in old data
     class_distribution = class_distributions.label_proportions(labels)
     
     upper_limit = int(len(data)*ratio_return_total)
-    
-    if normalization == "min_max":
-        # normalize the data
-        data_normal = (data-data.min())/(data.max()-data.min())
-        data_update_normal = (data_update-data_update.min())/(data_update.max()-data_update.min())
-    
-    elif normalization == "mean":
-        data_normal = (data-data.mean())/data.std()
-        data_update_normal = (data_update-data_update.mean())/data_update.std()
-        
-    elif normalization == None:
-        data_normal = data
-        data_update_normal = data_update
-        
-    else:
-        print("Not a supported sort_type")
-        return
-    
+
+    # normalize
+    data_normal, data_update_normal = helper_funcs.normalize_data(normalization, data, data_update)
+
     # first focus on N
     N = pd.DataFrame(dtype='float64')
     N_labels = pd.Series(dtype='int8')
@@ -406,7 +376,7 @@ def get_samples_nearest_neighbors(data,
     
             N = pd.concat([N, tmp])
             N_labels = pd.concat([N_labels, tmp_labels])
-            
+
     # now focus on O
     
     O = pd.DataFrame()
@@ -450,7 +420,6 @@ def get_samples_nearest_neighbors(data,
             O = pd.concat([O, class_data.iloc[idx_sort[-limit:]]])
             O_labels = pd.concat([O_labels, class_data_labels.iloc[idx_sort[-limit:]]])
 
-    
     return_data = pd.concat([N,O])
     return_data_labels = pd.concat([N_labels, O_labels])
     
