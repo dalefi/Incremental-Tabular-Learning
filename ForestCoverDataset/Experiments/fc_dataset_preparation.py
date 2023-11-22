@@ -18,8 +18,6 @@ header = {0: "Elevation", 1: "Aspect", 2: "Slope", 3: "Horizontal_Distance_To_Hy
           4: "Vertical_Distance_To_Hydrology", 5: "Horizontal_Distance_To_Roadways",
           6: "Hillshade_9am", 7: "Hillshade_Noon", 8: "Hillshade_3pm", 9: "Horizontal_Distance_To_Fire_Points"}
 
-# try without all the onehot-encoded features
-
 # add the names of binary columns
 for i in range(1, 5):
     header[9+i] = f"Wilderness_Area_{i}"
