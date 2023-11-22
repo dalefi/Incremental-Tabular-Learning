@@ -18,7 +18,6 @@ from mylib import class_distributions
 from mylib import data_selection
 from mylib import helper_funcs
 
-from mylib.my_xgb import BinaryDecisionTree as BDT
 from mylib.my_xgb import add_class
 
 
@@ -280,14 +279,25 @@ def updating_pipeline(filepath,
 
                 # use all the update data to update the model
                 dtrain_update = xgb.DMatrix(data_update, label=labels_update)
-                
-                # update model
-                bst_update = xgb.train(param_update,
-                                      dtrain_update,
-                                      num_round_updt,
-                                      #evals=evallist_update,
-                                      verbose_eval=False,
-                                      xgb_model=model_folder/"small_model.json")
+
+                if training_method == 'continued_training':
+                    # update model
+                    bst_update = xgb.train(param_update,
+                                          dtrain_update,
+                                          num_round_updt,
+                                          #evals=evallist_update,
+                                          verbose_eval=False,
+                                          xgb_model=model_folder/"small_model.json")
+
+                elif training_method == 'add_trees':
+                    bst_update = add_class.add_class(model_file=model_folder/"small_model.json",
+                                                      data=data_update,
+                                                      labels=labels_update,
+                                                      num_tree_grps=num_round,
+                                                      num_orig_classes=num_labels,
+                                                      num_iterations=num_round_updt,
+                                                      params=param_update,
+                                                      weights=None)
     
                 
                 old_data_tmp[model_num] = skl.metrics.accuracy_score(np.argmax(bst_update.predict(dsmall), axis=1),

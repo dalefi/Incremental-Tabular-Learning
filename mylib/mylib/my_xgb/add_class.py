@@ -16,6 +16,7 @@ from mylib.my_xgb import merge_tree_model_file as merge
 
 def add_class(model_file=None,
               data=None,
+              labels=None,
               num_tree_grps=None,
               num_orig_classes=None,
               num_iterations=None,
@@ -26,7 +27,8 @@ def add_class(model_file=None,
     
     Parameters:
         model_file (.json)           : .json-dump of XGBoost model, that a class is supposed to be added to
-        data (pd.DataFrame)          : training data (contains the labels in the last
+        data (pd.DataFrame)          : training data
+        labels (pd.Series)           : labels for the training data
         num_tree_grps (int)          : number of tree groups in original model (equals num_round)
         num_orig_classes (int)       : number of classes the original model had
         num_iterations (int)         : number of iterations that new trees should be trained
@@ -36,8 +38,7 @@ def add_class(model_file=None,
     Returns: 
         Modified model.
     """
-    
-    
+
     # want to update the model step-wise
     current_model = model_file
     
@@ -50,6 +51,7 @@ def add_class(model_file=None,
         
         new_tree = build_tree(current_model,
                               data,
+                              labels,
                               iteration,
                               target_class=num_orig_classes,
                               num_orig_classes=num_orig_classes,
@@ -83,6 +85,7 @@ def add_class(model_file=None,
 
 def build_tree(model_file=None,
                data=None,
+               labels=None,
                iteration=None,
                target_class=None,
                num_orig_classes=None,
@@ -97,14 +100,11 @@ def build_tree(model_file=None,
     current_model = xgb.Booster()
     current_model.load_model(model_file)
     
-    # unpack the data
-    features = data[data.columns[:len(data.columns)-1]]
-    labels = data[data.columns[len(data.columns)-1]]
-    num_samples, num_features = features.shape
+    num_samples, num_features = data.shape
     
     # get previous prediction
     if iteration != 0:
-        prev_prediction = _get_current_prediction(current_model, features, labels, iteration)
+        prev_prediction = _get_current_prediction(current_model, data, labels, iteration)
         
     else:
         # need to artificially create the previous prediction
@@ -115,22 +115,22 @@ def build_tree(model_file=None,
                                       num_features=num_features,
                                       params=params)
 
-    new_tree.fit(features, labels, prev_prediction, weights)
+    new_tree.fit(data, labels, prev_prediction, weights)
     return new_tree
     
     
-def _get_current_prediction(model, features, labels, iteration):
+def _get_current_prediction(model, data, labels, iteration):
     """
     Returns current prediction at iteration step.
     """
     
     """
-    prediction = model.predict(xgb.DMatrix(features, label=labels),
+    prediction = model.predict(xgb.DMatrix(data, label=labels),
                                output_margin=True,
                                iteration_range=(0, iteration))
     """
 
-    prediction = model.predict(xgb.DMatrix(features, label=labels),
+    prediction = model.predict(xgb.DMatrix(data, label=labels),
                                output_margin=True)
         
     return prediction

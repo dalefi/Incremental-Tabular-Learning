@@ -59,9 +59,6 @@ def full_models(filepath,
 
     largest_or_smallest_class = helper_funcs.largest_or_smallest_class(labels, new_class_idx)
     
-
-
-
     
     # prepare smaller dataset with only first num_labels classes of beans
     old_classes = np.delete(labels.unique(), new_class_idx)

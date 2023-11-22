@@ -31,4 +31,4 @@ header[54] = "Class"
 
 data = data.rename(header, axis=1)
 data["Class"] = data["Class"] - 1   # want 0-based index
-data.to_csv(data_folder / 'ForestCoverDataset.csv')
+data.to_csv(data_folder / 'ForestCoverDataset.csv', index=False)
