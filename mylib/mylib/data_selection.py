@@ -87,7 +87,7 @@ def important_features_by_class(tree_df, num_labels, criterion="gain"):
     
     if criterion == "gain":
         for i in range(num_labels):
-            tmp=tree_df[tree_df["Tree"]%6==i]
+            tmp=tree_df[tree_df["Tree"]%num_labels==i]
             
             gain = tmp.groupby(["Feature"]).sum(numeric_only=True)["Gain"]
             feature = gain.idxmax()
@@ -97,7 +97,7 @@ def important_features_by_class(tree_df, num_labels, criterion="gain"):
     
     if criterion == "avg_gain":
         for i in range(num_labels):
-            tmp=tree_df[tree_df["Tree"]%6==i]
+            tmp=tree_df[tree_df["Tree"]%num_labels==i]
             
             gain=tmp.groupby(["Feature"]).sum(numeric_only=True)["Gain"]
             num_splits=tmp.groupby(["Feature"]).count()["Tree"]
@@ -108,7 +108,7 @@ def important_features_by_class(tree_df, num_labels, criterion="gain"):
 
     if criterion == "num_splits":
         for i in range(num_labels):
-            tmp=tree_df[tree_df["Tree"]%6==i]
+            tmp=tree_df[tree_df["Tree"]%num_labels==i]
             
             num_splits=tmp.groupby(["Feature"]).count()["Tree"]
             feature = num_splits.idxmax()
@@ -118,7 +118,7 @@ def important_features_by_class(tree_df, num_labels, criterion="gain"):
             
     if criterion == "cover":
         for i in range(num_labels):
-            tmp=tree_df[tree_df["Tree"]%6==i]
+            tmp=tree_df[tree_df["Tree"]%num_labels==i]
             
             gain = tmp.groupby(["Feature"]).sum(numeric_only=True)["Cover"]
             feature = gain.idxmax()
@@ -128,7 +128,7 @@ def important_features_by_class(tree_df, num_labels, criterion="gain"):
     
     if criterion == "avg_cover":
         for i in range(num_labels):
-            tmp=tree_df[tree_df["Tree"]%6==i]
+            tmp=tree_df[tree_df["Tree"]%num_labels==i]
             
             gain=tmp.groupby(["Feature"]).sum(numeric_only=True)["Cover"]
             num_splits=tmp.groupby(["Feature"]).count()["Tree"]
@@ -218,7 +218,7 @@ def get_samples_euclidean(data,
         labels (Pandas Series)        : labels of old feature data
         data_update (Pandas Dataframe): feature data of new class
         ratio_return_total (float)    : ratio of number of returned samples to number of total samples
-        normalization (bool)          : which kind of normalization should be applied
+        normalization (str)           : which kind of normalization should be applied
                                         Admissible normalization values are:
                                         "min_max": min-max normalization
                                         "mean"   : mean-normalization
@@ -334,19 +334,8 @@ def get_samples_nearest_neighbors(data,
     
     upper_limit = int(len(data)*ratio_return_total)
 
-    """
-    Debugging
-    """
-    for column in data_update:
-        if data_update[column].isnull().values.any():
-            print('data_update:', column)
-
     # normalize
     data_normal, data_update_normal = helper_funcs.normalize_data(normalization, data, data_update)
-
-    for column in data_update_normal:
-        if data_update_normal[column].isnull().values.any():
-            print('data_update_normal:', column)
 
     # first focus on N
     N = pd.DataFrame(dtype='float64')
