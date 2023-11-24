@@ -52,10 +52,10 @@ num_round = int(sys.argv[3])
 max_depth = int(sys.argv[4])
 
 
-# calculate the class proportions so
 data = pd.read_csv(filepath)
 labels = data["Class"]
 
+# calculate the class proportions and largest and smallest classes
 label_proportions = class_distributions.label_proportions(labels)
 largest_class_label = max(label_proportions.items(), key=operator.itemgetter(1))[0]
 smallest_class_label = min(label_proportions.items(), key=operator.itemgetter(1))[0]
