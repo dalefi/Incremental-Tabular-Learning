@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 import pickle
 
 import operator
@@ -12,6 +13,31 @@ plt.rcParams['text.usetex'] = True
 import seaborn as sns
 
 from pathlib import Path
+
+
+def subsample(data, target_num_of_samples, stratify=True):
+    """
+    Subsamples a dataset.
+
+    Parameters:
+        data (pd.DataFrame)        : The data. Needs a column ['Class']
+        target_num_of_samples (int): The target number of samples after subsampling.
+        stratify (bool)            : If to stratify after ['Class'] while subsampling.
+    """
+
+    labels = data['Class']
+    X = data.drop(["Class"],axis=1,inplace=False)
+
+    target_proportion = 1-(target_num_of_samples/len(X))
+
+    X_subsample, _, y_subsample, _ = train_test_split(X,
+                                                    labels,
+                                                    test_size=target_proportion,
+                                                    stratify=labels)
+
+
+    return pd.concat([X_subsample, y_subsample], axis=1)
+    
 
 
 def normalize_data(norm_method, data_small, new_class_data):
@@ -33,7 +59,7 @@ def normalize_data(norm_method, data_small, new_class_data):
     full_data = pd.concat([data_small, new_class_data])
     
     if norm_method == 'min_max':
-        full_data_normal = (full_data-full_data.min())/(full_data.max()-full_data.min())
+        full_data_normal = (full_data-full_data.min())/np.maximum((full_data.max()-full_data.min()), 10e-6)
 
     elif norm_method == 'mean':
         full_data_normal = (full_data-full_data.mean())/full_data.std()

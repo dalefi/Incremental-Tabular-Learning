@@ -329,14 +329,24 @@ def get_samples_nearest_neighbors(data,
                                         default alpha=1 means all returned data is close to new data.
         remove_duplicates (bool)      : the data might contain duplicates. by default they are removed.
     """
-
     # compute distribution of classes in old data
     class_distribution = class_distributions.label_proportions(labels)
     
     upper_limit = int(len(data)*ratio_return_total)
 
+    """
+    Debugging
+    """
+    for column in data_update:
+        if data_update[column].isnull().values.any():
+            print('data_update:', column)
+
     # normalize
     data_normal, data_update_normal = helper_funcs.normalize_data(normalization, data, data_update)
+
+    for column in data_update_normal:
+        if data_update_normal[column].isnull().values.any():
+            print('data_update_normal:', column)
 
     # first focus on N
     N = pd.DataFrame(dtype='float64')

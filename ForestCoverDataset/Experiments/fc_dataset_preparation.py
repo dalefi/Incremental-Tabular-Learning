@@ -1,7 +1,27 @@
+"""
+Prepares the the ForestCoverDataset so that it can be used by the experiments.py script.
+
+Takes an (optional) argument from the command line:
+    target_num_of_samples (int): The target number of samples after subsampling. Defaults to 10,000.
+"""
+
 from pathlib import Path
 import pandas as pd
+import sys
+
+from mylib import helper_funcs
 
 
+# command line params
+
+if len(sys.argv) == 1:
+    target_num_of_samples = 10000
+
+elif len(sys.argv) == 2:
+    target_num_of_samples = int(sys.argv[1])
+
+else:
+    raise ValueError("Something is fishy with the input")
 
 # open file
 
@@ -31,4 +51,8 @@ header[54] = "Class"
 
 data = data.rename(header, axis=1)
 data["Class"] = data["Class"] - 1   # want 0-based index
-data.to_csv(data_folder / 'ForestCoverDataset.csv', index=False)
+
+# subsample data to increase speed (or rather make it bearable ...)
+data_subsample = helper_funcs.subsample(data, target_num_of_samples)
+
+data_subsample.to_csv(data_folder / 'ForestCoverDataset.csv', index=False)
