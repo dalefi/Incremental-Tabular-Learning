@@ -15,6 +15,19 @@ import seaborn as sns
 from pathlib import Path
 
 
+
+def create_numbered_categories(data, column):
+    """
+    If a categorical column contains strings its not possible to use all the data_selection methods.
+    Thus we turn them into numbers.
+    """
+
+    labels_dict = {key:value for (value,key) in enumerate(data[column].unique())}
+    data[column] = data[column].map(labels_dict)
+
+    return data
+    
+
 def subsample(data, target_num_of_samples, stratify=True):
     """
     Subsamples a dataset.
