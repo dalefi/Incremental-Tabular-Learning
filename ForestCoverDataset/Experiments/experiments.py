@@ -9,7 +9,7 @@ I subsampled the datasets to around 10,000 samples, because especially the add_t
 scales badly with the number of samples.
 
 I set the parameters in the following way:
-    num_models is at 20, but this number can be arbitrarily high, it doesn't change anything just takes longer
+    num_models is at 10, but this number can be arbitrarily high, it doesn't change anything just takes longer
     (and ideally delivers more accurate results)
 
     num_round is at 10, this can be varied to increase model performance. Of course, the higher the number, the longer

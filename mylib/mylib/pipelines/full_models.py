@@ -142,8 +142,8 @@ def full_models(filepath,
                                                          labels_small)
         new_acc[model_num] = skl.metrics.accuracy_score(np.argmax(bst_full.predict(dnew_class), axis=1),
                                                          new_class_labels)
-        full_acc[model_num] = skl.metrics.accuracy_score(np.argmax(bst_full.predict(dtest_full), axis=1),
-                                                         y_test_full)
+        full_acc[model_num] = skl.metrics.accuracy_score(np.argmax(bst_full.predict(dfull), axis=1),
+                                                         labels_full)
     
     print("Accuracy of full model on old data: ", old_acc.mean())
     print("Accuracy of full model on new data: ", new_acc.mean())

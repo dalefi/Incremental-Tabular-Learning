@@ -235,12 +235,12 @@ def plot_results(training_method,
     
     for num_round_updt in old_data_mean.keys():
         # plot performances
-        fig = plt.figure(figsize=(16,6))
+        fig = plt.figure(figsize=(14,6))
         ax = plt.gca()
         #ax.set_xlim([0, 1])
-        ax.set_ylim([0.8, 1])
+        #ax.set_ylim([0.8, 1.05])
     
-        ax.set_xlim([0, 1])
+        #ax.set_xlim([0, 1])
         #ax.set_ylim([0, 1])
 
         plot_title = f"{training_method}, {data_selection_method}, {sort_type}, {largest_or_smallest_class}"
@@ -250,12 +250,14 @@ def plot_results(training_method,
         plt.errorbar(proportion_of_old_data,
                      old_data_mean[num_round_updt],
                      yerr=old_data_std[num_round_updt],
-                     label="$f^{new}$ on old data")
+                     label="$f^{new}$ on old data",
+                     color = 'blue')
     
         plt.errorbar(proportion_of_old_data,
                      new_data_mean[num_round_updt],
                      yerr=new_data_std[num_round_updt],
-                     label="$f^{new}$ on new class")
+                     label="$f^{new}$ on new class",
+                     color = 'orange')
 
         """
         plt.errorbar(proportion_of_old_data,
