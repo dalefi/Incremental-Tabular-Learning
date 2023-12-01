@@ -162,8 +162,6 @@ def create_file_path(training_method, data_selection_method, sort_type, largest_
     mean_or_std:
         mean, std
     """
-    
-    results_folder = create_folder_path(training_method, data_selection_method, sort_type, largest_or_smallest_class)
 
     file_path = Path(f'{training_method}_{data_selection_method}_{sort_type}_{largest_or_smallest_class}_{which_data}_{mean_or_std}_results.pkl')
     
@@ -177,7 +175,13 @@ def unpack_results(training_method, data_selection_method, sort_type, largest_or
     results = {}
     for which_data in ['old_data', 'new_data', 'update_data', 'full_data']:
         for mean_or_std in ['mean', 'std']:
-            file_path = create_file_path(training_method, data_selection_method, sort_type, largest_or_smallest_class, which_data, mean_or_std)
+            file_path = create_file_path(training_method, 
+                                         data_selection_method, 
+                                         sort_type, 
+                                         largest_or_smallest_class, 
+                                         which_data, 
+                                         mean_or_std)
+            
             results_dict = pickle.load(open(folder_path / file_path, 'rb'))
             results[f'{which_data}_{mean_or_std}'] = results_dict
 
@@ -250,13 +254,13 @@ def plot_results(training_method,
         plt.errorbar(proportion_of_old_data,
                      old_data_mean[num_round_updt],
                      yerr=old_data_std[num_round_updt],
-                     label="$f^{new}$ on old data",
+                     label="$f^{new}$ on $\mathcal{D}^{\mathrm{old}}$",
                      color = 'blue')
     
         plt.errorbar(proportion_of_old_data,
                      new_data_mean[num_round_updt],
                      yerr=new_data_std[num_round_updt],
-                     label="$f^{new}$ on new class",
+                     label="$f^{new}$ on $\mathcal{D}^{\mathrm{new}}$",
                      color = 'orange')
 
         """
@@ -269,25 +273,25 @@ def plot_results(training_method,
         plt.errorbar(proportion_of_old_data,
                      full_data_mean[num_round_updt],
                      yerr=full_data_std[num_round_updt],
-                     label="$f^{new}$ on full data",
+                     label="$f^{new}$ on $\mathcal{D}^{\mathrm{full}}$",
                      color='red')
         
         plt.axhline(old_acc_batch,
                     color = "blue",
                     linestyle = "--",
-                    label = "$f^{full}$ on old data")
+                    label = "$f^{full}$ on $\mathcal{D}^{\mathrm{old}}$")
         
         plt.axhline(new_acc_batch,
                     color = "orange",
                     linestyle = "--",
-                    label = "$f^{full}$ on new class")
+                    label = "$f^{full}$ on $\mathcal{D}^{\mathrm{new}}$")
         
         plt.axhline(full_acc_batch,
                     color = "red",
                     linestyle = "--",
-                    label = "$f^{full}$ on full data")
+                    label = "$f^{full}$ on $\mathcal{D}^{\mathrm{full}}$")
     
-        plt.xlabel("Percentage of old data used in updating")
+        plt.xlabel("Size of the exemplar set")
         plt.xticks(proportion_of_old_data)
         plt.ylabel("Accuracy")
         plt.legend()
@@ -298,3 +302,143 @@ def plot_results(training_method,
             plt.savefig(savepath)
 
         plt.show();
+
+
+def unpack_results_for_subplots(training_method, sort_type, largest_or_smallest_class, which_data):
+    """
+    I thought of a better visualization so I need a new unpack function.
+    Returns a dictionary with the data selection methods as keys and arrays with the results as values.
+    The arrays are of shape (2,9), the first row contains the means, the second one the stds.
+    The results are specific to a training method, a sort type, the largest resp. smallest class, and the which_data (old, new, full).
+    """
+
+    plot_data = {}
+    for data_selection_method in ['split_criterion', 'dist_to_mean', 'nearest_neighbors', 'entropy', 'random']:
+
+        # for random we don't have furthest sort_type
+        if data_selection_method == 'random':
+            sort_type = 'closest'
+        
+        folder_path = create_folder_path(training_method, data_selection_method, sort_type, largest_or_smallest_class)
+
+        result_array = np.empty((2,9))
+        for idx, mean_or_std in enumerate(['mean', 'std']):
+            file_path = create_file_path(training_method, 
+                         data_selection_method, 
+                         sort_type, 
+                         largest_or_smallest_class, 
+                         which_data, 
+                         mean_or_std)
+            
+            results_dict = pickle.load(open(folder_path / file_path, 'rb'))
+            # there will always be only one key, I just don't have the time for more
+            for key in results_dict.keys():
+                result_array[idx,:] = np.array(results_dict[key])
+        plot_data[data_selection_method] = result_array
+
+    return plot_data
+    
+
+def create_single_subplot(plot_data, batch_data, ax):
+    """
+    Parameters:
+        plot_data (dict): a dictionary with all data_selection_methods as keys. the values are
+                          2-dim arrays with the mean results in the first- and the std results in
+                          the second row
+        ax (plt.Axes)   : an ax object to plot to
+    """
+
+    #plot_title = f"{training_method}, {sort_type}, {largest_or_smallest_class}"
+                    
+    #plt.title(plot_title)
+
+    proportion_of_old_data = [.1*i for i in range(1,10)]
+
+    for data_selection_method in plot_data.keys():
+    
+        ax.errorbar(proportion_of_old_data,
+                     plot_data[data_selection_method][0],
+                     yerr=plot_data[data_selection_method][1],
+                     label = data_selection_method)
+
+    ax.axhline(batch_data,
+                linestyle = "--",
+               label = '$f^{\mathrm{full}}$')
+        
+    ax.set_xlabel("Size of the exemplar set")
+    ax.set_xticks(proportion_of_old_data)
+    ax.set_ylabel("Accuracy")
+    ax.legend(borderpad=0.2)
+    
+    return ax
+
+def subplots_for_training_method_and_sort_type(results_folder,
+                                               training_method,
+                                               sort_type,
+                                               save = False):
+
+    """
+    The goal is to create subplots with three columns and two rows.
+    In the first row the results for the update with the largest class is plotted,
+    in the second row the results for the smallest class.
+
+    In the first column we plot the results on the old data, in the second and third
+    the results on new and full data respectively.
+
+    For one dataset we will need 4 such plots to plot everything relevant I think.
+
+    Parameters:
+        results_folder (Path)          : The path to where the results are stored.
+        training_method (str)          : The training method ('continued_training' or 'add_trees')
+        sort_type (str)                : 'closest' or 'furthest'
+        save (bool)                    : if images are to saved after creation
+    """
+    
+    # create folder where the images are stored
+    Path('images').mkdir(parents=True, exist_ok=True)
+    # give it a name
+    images_folder = Path('images')
+    
+    # set the seaborn standard theme for plotting
+    sns.set_theme()
+
+    # i'll just fix it
+    proportion_of_old_data = [i*0.1 for i in range(1,10)]
+
+    # create a subplots with 2 rows and 3 cols
+    fig, axs = plt.subplots(2, 3, sharey=True, figsize=(15, 10))
+    #fig, axs = plt.subplots(2, 3, sharey=False, figsize=(15, 10))
+    
+
+    plot_title = f'Subplot_{training_method}_{sort_type}'
+
+    for row_idx, largest_or_smallest_class in enumerate(['largest class', 'smallest class']):
+        
+        for col_idx, which_data in enumerate(['old_data', 'new_data', 'full_data']):
+
+            # load the batch results
+            batch_results = unpack_batch_results(training_method, largest_or_smallest_class)
+            batch_data = batch_results[f'{which_data}']
+
+            # load the update results
+            plot_data = unpack_results_for_subplots(training_method, sort_type, largest_or_smallest_class, which_data)
+            create_single_subplot(plot_data, batch_data, axs[row_idx, col_idx])
+
+    # lets try to add some captions to rows and columns
+    cols = ['$\mathcal{D}^{\mathrm{old}}$', '$\mathcal{D}^{\mathrm{new}}$', '$\mathcal{D}^{\mathrm{full}}$']
+    rows = ['largest class', 'smallest class']
+    
+    for ax, col in zip(axs[0], cols):
+        ax.set_title(col)
+    
+    for ax, row in zip(axs[:,0], rows):
+        ax.set_ylabel(row, rotation=90, size='large')
+    
+    fig.tight_layout()
+    
+    if save:
+        filename = plot_title
+        savepath = Path(images_folder / f'{filename}')
+        plt.savefig(savepath, dpi=300, bbox_inches='tight')
+                
+    plt.show();
