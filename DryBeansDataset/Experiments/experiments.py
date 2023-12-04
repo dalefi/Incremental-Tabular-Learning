@@ -53,7 +53,7 @@ for training_method in ['continued_training', 'add_trees']:
                                 num_models,
                                 num_round,
                                 max_depth)
-        """
+        
         # the update process - the actual experiments
         for data_selection_method in ['split_criterion', 'dist_to_mean', 'nearest_neighbors', 'entropy']:
             for sort_type in ['closest', 'furthest']:
@@ -75,7 +75,6 @@ for training_method in ['continued_training', 'add_trees']:
                                             num_models,
                                             num_round,
                                             max_depth)
-    """
     
     
     
