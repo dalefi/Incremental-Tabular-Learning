@@ -61,7 +61,7 @@ def full_models(filepath,
     
     
     # prepare smaller dataset with only first num_labels classes of beans
-    old_classes = np.delete(labels.unique(), new_class_idx)
+    old_classes = np.setdiff1d(labels.unique(), new_class_idx)
     new_class = new_class_idx
 
     # compute number of old labels used
@@ -123,7 +123,8 @@ def full_models(filepath,
         X_train_full, X_test_full, y_train_full, y_test_full = skl.model_selection.train_test_split(data_full,
                                                                                                     labels_full,
                                                                                                     test_size=.2,
-                                                                                                    random_state=seed)
+                                                                                                    random_state=seed,
+                                                                                                    stratify=labels_full)
 
         dtrain_full = xgb.DMatrix(X_train_full, label=y_train_full)
         dtest_full = xgb.DMatrix(X_test_full, label=y_test_full)
