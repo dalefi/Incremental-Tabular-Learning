@@ -98,6 +98,7 @@ def relabel(labels, old_classes, new_class):
     
     Returns:
         relabeled (Pandas Series): relabeled labels.
+        relabel_dict (dict)      : the dictionary used for relabelling
     """
     
     relabel_dict = {}
@@ -375,7 +376,9 @@ def create_single_subplot(plot_data, batch_data, ax):
 def subplots_for_training_method_and_sort_type(results_folder,
                                                training_method,
                                                sort_type,
-                                               save = False):
+                                               y_lims = None,
+                                               save = False,
+                                               show = True):
 
     """
     The goal is to create subplots with three columns and two rows.
@@ -391,7 +394,9 @@ def subplots_for_training_method_and_sort_type(results_folder,
         results_folder (Path)          : The path to where the results are stored.
         training_method (str)          : The training method ('continued_training' or 'add_trees')
         sort_type (str)                : 'closest' or 'furthest'
+        y_lims (tuple)                 : (y_lim_low, y_lim_high) are set if not None
         save (bool)                    : if images are to saved after creation
+        show (bool)                    : if images need to be shown
     """
     
     # create folder where the images are stored
@@ -406,10 +411,9 @@ def subplots_for_training_method_and_sort_type(results_folder,
     proportion_of_old_data = [i*0.1 for i in range(1,10)]
 
     # create a subplots with 2 rows and 3 cols
-    fig, axs = plt.subplots(2, 3, sharey=True, figsize=(15, 10))
-    #fig, axs = plt.subplots(2, 3, sharey=False, figsize=(15, 10))
+    #fig, axs = plt.subplots(2, 3, sharey=True, figsize=(15, 10))
+    fig, axs = plt.subplots(2, 3, sharey=False, figsize=(15, 10))
     
-
     plot_title = f'Subplot_{training_method}_{sort_type}'
 
     for row_idx, largest_or_smallest_class in enumerate(['largest class', 'smallest class']):
@@ -433,6 +437,12 @@ def subplots_for_training_method_and_sort_type(results_folder,
     
     for ax, row in zip(axs[:,0], rows):
         ax.set_ylabel(row, rotation=90, size='large')
+
+    # if we want to adapt the ylims
+    if y_lims is not None:
+        for ax in axs:
+            for sub_ax in ax:
+                sub_ax.set_ylim(y_lims)
     
     fig.tight_layout()
     
@@ -440,5 +450,66 @@ def subplots_for_training_method_and_sort_type(results_folder,
         filename = plot_title
         savepath = Path(images_folder / f'{filename}')
         plt.savefig(savepath, dpi=300, bbox_inches='tight')
-                
-    plt.show();
+
+    if show:
+        plt.show();
+
+    return (fig, axs)
+
+
+def create_all_subplots(results_folder,
+                        save = False,
+                        show = True):
+    """
+    Creates all the subplots for a dataset. All ylims should be the same, thats why we need to create the plots twice.
+    """
+    y_lim_low_min = np.inf
+    y_lim_high_max = -np.inf
+    
+    # create all the plots once
+    for training_method in ['continued_training', 'add_trees']:
+        for sort_type in ['closest', 'furthest']:
+            print(f'{training_method}, {sort_type}')
+            
+            fig, axs = subplots_for_training_method_and_sort_type(results_folder,
+                                                                    training_method,
+                                                                    sort_type,
+                                                                    y_lims = None,
+                                                                    save = False,
+                                                                    show = False)
+            # get ylims
+            for ax in axs:
+                for sub_ax in ax:
+                    y_lim_low, y_lim_high = sub_ax.get_ylim()
+
+                    if y_lim_low < y_lim_low_min:
+                        y_lim_low_min = y_lim_low
+        
+                    if y_lim_high > y_lim_high_max:
+                        y_lim_high_max = y_lim_high
+
+    # clear previous plots
+    plt.close('all')
+    
+    # create them again but set the ylims
+    for training_method in ['continued_training', 'add_trees']:
+        for sort_type in ['closest', 'furthest']:
+            print(f'{training_method}, {sort_type}')
+            
+            fig, axs = subplots_for_training_method_and_sort_type(results_folder,
+                                                                    training_method,
+                                                                    sort_type,
+                                                                    y_lims = (y_lim_low_min, y_lim_high_max),
+                                                                    save = save,
+                                                                    show = show)
+
+    return True
+
+
+    
+
+
+
+
+
+    
